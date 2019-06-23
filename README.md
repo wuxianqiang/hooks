@@ -1,68 +1,178 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 1. react hooks
 
-## Available Scripts
+生命时候会使用hooks
+1. 函数组件转换成类组件，可以使用函数组件+hooks实现
+2. useState
 
-In the project directory, you can run:
+```js
+let [state, setState] = useState(initialState)
+```
 
-### `npm start`
+```js
+let memoizedState;
+function useState (initialState) {
+  memoizedState = memoizedState || initialState
+  function setState (newState) {
+    memoizedState = newState
+    render()
+  }
+  return [memoizedState, setState]
+}
+function Counter() {
+  // 返回数组就是为了变量名称可以自定义的
+  const [number, setNumber] = useState(0)
+  return (
+    <>
+      <p>{number}</p>
+      <button
+        onClick={
+          () => setNumber(number + 1)
+        }>
+        +
+      </button>
+    </>
+  )
+}
+```
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+# 2. useReducer
+<!-- reducer跟redux的reducer一样 -->
+```js
+useReducer(reducer, initialArg, init)
+```
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+```js
+import React, { useState, useReducer } from 'react';
+import ReactDOM from 'react-dom';
 
-### `npm test`
+// useState 参数是初始状态
+// 第一个是当前的状态，第二个是改变状态的函数
+// 给函数组件增加一个保持状态的功能
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-### `npm run build`
+let initalArg = 0
+function reducer(state, action) {
+  switch (action.type) {
+    case 'increment':
+      return { number: state.number + 1 }
+    case 'decrement':
+      return { number: state.number - 1 }
+    default:
+      return state
+  }
+}
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+function init(initalArg) {
+  return { number: initalArg }
+}
+function Counter() {
+  let [state, dispatch] = useReducer(reducer, initalArg, init)
+  return (
+    <>
+      <p>{state.number}</p>
+      <button
+        onClick={
+          () => dispatch({ type: 'increment' })
+        }>
+        +
+      </button>
+      <button
+        onClick={
+          () => dispatch({ type: 'decrement' })
+        }>
+        -
+      </button>
+    </>
+  )
+}
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+ReactDOM.render(<Counter />, document.getElementById('root'));
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
+// useReducer是useState的内部实现
+// 改变逻辑状态复杂的时候
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+let memoizedState;
+function useReducer(reducer, initalArg, init) {
+  let initState = void 0;
+  if (typeof init !== 'undefined') {
+    initState = init(initalArg)
+  } else {
+    initState = initalArg
+  }
+  function dispatch(action) {
+    memoizedState = reducer(memoizedState, action)
+    render()
+  }
+  memoizedState = memoizedState || initState
+  return [memoizedState, dispatch]
+}
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```js
+let memoizedState;
+function useReducer(reducer, initalArg, init) {
+  let initState = void 0;
+  if (typeof init !== 'undefined') {
+    initState = init(initalArg)
+  } else {
+    initState = initalArg
+  }
+  function dispatch(action) {
+    memoizedState = reducer(memoizedState, action)
+    render()
+  }
+  memoizedState = memoizedState || initState
+  return [memoizedState, dispatch]
+}
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+function useState(initState) {
+  return useReducer((oldState, newState) => newState, initState)
+}
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+多个useState的使用
+```js
+function render() {
+  index = 0
+  ReactDOM.render(<Counter />, document.getElementById('root'));
+}
+render()
 
-## Learn More
+let memoizedStates = []
+let index = 0
+function useState (initialState) {
+  memoizedStates[index] = memoizedStates[index] || initialState
+  let currentIndex = index
+  function setState (newState) {
+    memoizedStates[currentIndex] = newState
+    render()
+  }
+  return [memoizedStates[index++], setState]
+}
+```
+类组件性能差，高阶组件的复用差，生命周期管理麻烦
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+# 3.  副作用
+函数主体中,不能写副作用的逻辑,订阅,定时器
+useEffect 给函数组件添加了副作用的
+替代组件的 ddmount didupdate willunmount
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+```js
+let memoizedStates =[]
+function useEffect (callback, dependencies) {
+  if (!dependencies) {
+    index++;
+    return callback()
+  }
+  let lasDependencies = memoizedStates[index]
+  // if (!dependencies) return callback()
+  let changed = lasDependencies?
+  !dependencies.every((item, index) => item === memoizedStates[index]):[]
+  if (changed) {
+    callback()
+    memoizedStates[index] = dependencies
+  }
+  index++
+}
+```
